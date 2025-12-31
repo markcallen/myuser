@@ -11,7 +11,14 @@ repos:
       - id: detect-private-key
       - id: check-merge-conflict
 
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args: [--strict]
+
   - repo: https://github.com/ansible/ansible-lint
     rev: v25.12.2
     hooks:
       - id: ansible-lint
+        args: ['--exclude', 'playbook-example.yml']

@@ -1,6 +1,6 @@
 ---
 galaxy_info:
-  role_name: create_my_user
+  role_name: myuser
   author: markcallen
   description: Creates a user, enables passwordless sudo, and installs SSH keys with multi-distribution support.
   license: MIT

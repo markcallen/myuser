@@ -1,4 +1,4 @@
-# my-user-ansible
+# myuser
 
 Ansible role to:
 - Create a user
@@ -59,7 +59,7 @@ pip install --upgrade ansible
 Install this role:
 
 ```bash
-ansible-galaxy install git+https://github.com/markcallen/my-user-ansible.git
+ansible-galaxy install git+https://github.com/markcallen/myuser.git
 ```
 
 Create a playbook from `playbook-example.yml`
@@ -72,7 +72,7 @@ Create a playbook from `playbook-example.yml`
     user_name: marka
     ssh_key_url: "https://github.com/markcallen.keys"
   roles:
-    - my-user-ansible
+    - myuser
 ```
 
 Run the playbook:
@@ -94,7 +94,7 @@ If your server doesn't need Docker, set `require_docker: false` to skip Docker i
     ssh_key_url: "https://github.com/markcallen.keys"
     require_docker: false  # Skip Docker installation
   roles:
-    - my-user-ansible
+    - myuser
 ```
 
 **Note:** When `require_docker: true` (default), this role automatically installs Docker using the `geerlingguy.docker` role (v7.9.0) as a dependency.
@@ -114,7 +114,7 @@ Add user to additional groups:
       - developers
       - www-data
   roles:
-    - my-user-ansible
+    - myuser
 ```
 
 ### Custom Shell
@@ -130,7 +130,7 @@ Use a different shell:
     ssh_key_url: "https://github.com/markcallen.keys"
     user_shell: /bin/zsh
   roles:
-    - my-user-ansible
+    - myuser
 ```
 
 ## Supported Platforms
@@ -173,12 +173,65 @@ pip install ansible-lint
 
 ### Dependencies
 
-When `require_docker: true` (default), this role automatically installs:
+When `require_docker: true` (default), this role depends on:
 - **geerlingguy.docker** (v7.9.0) - Handles Docker installation and configuration
 
-The Docker role will be installed automatically when you install this role via `ansible-galaxy`.
+**Installing dependencies:**
+
+If you installed this role via `ansible-galaxy` from GitHub, you need to manually install the dependencies:
+
+```bash
+# Install the required geerlingguy.docker role
+ansible-galaxy install geerlingguy.docker,7.9.0
+
+# Or install all dependencies from the meta/main.yml file
+ansible-galaxy install -r meta/main.yml
+```
+
+If you're using a `requirements.yml` file for your playbook, include both roles:
+
+```yaml
+# requirements.yml
+- src: git+https://github.com/markcallen/myuser.git
+  name: myuser
+
+- src: geerlingguy.docker
+  version: 7.9.0
+```
+
+Then install all requirements:
+
+```bash
+ansible-galaxy install -r requirements.yml
+```
 
 ## Troubleshooting
+
+### Role Not Found Error
+
+If you get an error like:
+```
+ERROR! the role 'geerlingguy.docker' was not found in ansible.legacy:/home/...
+```
+
+This means the required `geerlingguy.docker` dependency is not installed. Fix this by installing the dependency:
+
+```bash
+# Install the specific version required
+ansible-galaxy install geerlingguy.docker,7.9.0
+
+# Or install all dependencies from the role's meta/main.yml
+ansible-galaxy install -r meta/main.yml
+```
+
+**Note:** If you don't need Docker, you can skip this by setting `require_docker: false` in your playbook variables:
+
+```yaml
+vars:
+  user_name: marka
+  ssh_key_url: "https://github.com/markcallen.keys"
+  require_docker: false  # Skip Docker installation
+```
 
 ### Python Compatibility Issues
 
@@ -225,10 +278,16 @@ When developing or testing this role from the source directory (without installi
 
 #### Option 1: Use the included playbook
 
-From the role directory, run:
+If you've cloned this role into a subdirectory, you'll need to create a playbook in the parent directory so Ansible can find the role:
 
 ```bash
-# Against a remote host
+# From the parent directory containing the cloned myuser/ subdirectory
+cp myuser/playbook-example.yml playbook.yml
+
+# Edit playbook.yml to set your desired user_name and ssh_key_url values
+nano playbook.yml  # or use your preferred editor
+
+# Run the playbook
 ansible-playbook -i <hostname>, -u root playbook.yml
 
 # Locally on your machine
@@ -238,7 +297,9 @@ ansible-playbook -i localhost, --connection=local playbook.yml
 ansible-playbook -i <hostname>, -u root playbook.yml --check
 ```
 
-Note: Edit `playbook.yml` to set your desired `user_name` and `ssh_key_url` values.
+**Why copy to parent directory?**
+
+When you reference a role by name (like `myuser` in the playbook), Ansible searches for it in the current directory and standard role paths. By placing `playbook.yml` in the parent directory, Ansible will automatically find the `myuser/` subdirectory as a local role.
 
 #### Option 2: Create a test playbook
 

@@ -5,4 +5,4 @@
     user_name: myusername
     ssh_key_url: "https://github.com/myusername.keys"
   roles:
-    - my-user-ansible
+    - myuser
