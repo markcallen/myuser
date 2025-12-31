@@ -1,4 +1,41 @@
 ---
+# Validate required variables
+- name: Validate required variables are provided
+  ansible.builtin.assert:
+    that:
+      - user_name is defined
+      - user_name | length > 0
+      - ssh_key_url is defined
+      - ssh_key_url | length > 0
+    fail_msg: "Required variables 'user_name' and 'ssh_key_url' must be defined and non-empty"
+    success_msg: "Required variables validated successfully"
+
+# Detect admin group based on OS family if not explicitly set
+- name: Detect admin group for Debian-based systems
+  ansible.builtin.set_fact:
+    detected_admin_group: "sudo"
+  when:
+    - admin_group == ""
+    - ansible_os_family == "Debian"
+
+- name: Detect admin group for RedHat-based systems
+  ansible.builtin.set_fact:
+    detected_admin_group: "wheel"
+  when:
+    - admin_group == ""
+    - ansible_os_family == "RedHat"
+
+- name: Use user-specified admin group if provided
+  ansible.builtin.set_fact:
+    detected_admin_group: "{{ admin_group }}"
+  when: admin_group != ""
+
+- name: Fail if admin group could not be detected
+  ansible.builtin.fail:
+    msg: "Could not detect admin group for OS family '{{ ansible_os_family }}'. Please set 'admin_group' variable explicitly."
+  when: detected_admin_group is not defined
+
+# Check prerequisites
 - name: Check if 'sudo' is installed
   ansible.builtin.stat:
     path: /usr/bin/sudo
@@ -13,25 +50,46 @@
   ansible.builtin.stat:
     path: /usr/bin/docker
   register: docker_bin
+  when: require_docker | bool
 
-- name: Fail if 'docker' is not installed
+- name: Fail if 'docker' is not installed but is required
   ansible.builtin.fail:
-    msg: "'docker' is not installed on the target host. Please install it before running this role."
-  when: not docker_bin.stat.exists
+    msg: "'docker' is not installed on the target host. Please install it or set 'require_docker: false'."
+  when:
+    - require_docker | bool
+    - not docker_bin.stat.exists
 
+# Build groups list dynamically
+- name: Build initial groups list with admin group
+  ansible.builtin.set_fact:
+    user_groups_list: ["{{ detected_admin_group }}"]
+
+- name: Add docker group if docker is installed
+  ansible.builtin.set_fact:
+    user_groups_list: "{{ user_groups_list + ['docker'] }}"
+  when:
+    - docker_bin.stat.exists is defined
+    - docker_bin.stat.exists
+
+- name: Add additional user groups if specified
+  ansible.builtin.set_fact:
+    user_groups_list: "{{ user_groups_list + user_groups }}"
+  when: user_groups | length > 0
+
+# Create and configure user
 - name: Ensure user "{{ user_name }}" exists
   ansible.builtin.user:
     name: "{{ user_name }}"
-    shell: /bin/bash
+    shell: "{{ user_shell }}"
     state: present
-    groups: sudo,docker
+    groups: "{{ user_groups_list | join(',') }}"
     append: yes
-    create_home: yes
+    create_home: "{{ create_home }}"
 
-- name: Ensure passwordless sudo for the sudo group
+- name: Ensure passwordless sudo for the admin group
   ansible.builtin.copy:
     src: sudoers.j2
-    dest: /etc/sudoers.d/90-passwordless-sudo
+    dest: "/etc/sudoers.d/90-passwordless-{{ detected_admin_group }}"
     mode: '0440'
     owner: root
     group: root
@@ -45,10 +103,10 @@
     group: "{{ user_name }}"
     mode: '0700'
 
-- name: Download SSH public key from GitHub
-  ansible.builtin.get_url:
-    url: "{{ ssh_key_url }}"
-    dest: "/home/{{ user_name }}/.ssh/authorized_keys"
-    mode: '0600'
-    owner: "{{ user_name }}"
-    group: "{{ user_name }}"
+- name: Install SSH public keys from GitHub
+  ansible.builtin.authorized_key:
+    user: "{{ user_name }}"
+    state: present
+    key: "{{ ssh_key_url }}"
+    exclusive: no
+    comment: "Keys from {{ ssh_key_url }}"

@@ -1,0 +1,14 @@
+---
+# Required variables (must be set by user)
+user_name: ""
+ssh_key_url: ""
+
+# Optional configurations
+require_docker: true
+user_shell: /bin/bash
+user_groups: []  # Additional groups beyond admin group
+create_home: true
+
+# Admin group configuration (auto-detected based on OS family)
+# Can be overridden if needed
+admin_group: ""  # Will be auto-detected: 'sudo' for Debian/Ubuntu, 'wheel' for RHEL/CentOS
