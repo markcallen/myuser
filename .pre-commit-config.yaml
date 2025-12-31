@@ -11,7 +11,7 @@ repos:
       - id: detect-private-key
       - id: check-merge-conflict
 
-repos:
   - repo: https://github.com/ansible/ansible-lint
     rev: v25.12.2
-    - id: ansible-lint
+    hooks:
+      - id: ansible-lint
