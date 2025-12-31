@@ -22,3 +22,11 @@ repos:
     hooks:
       - id: ansible-lint
         args: ['--exclude', 'playbook-example.yml']
+
+  - repo: local
+    hooks:
+      - id: visudo-check
+        name: visudo format check
+        entry: visudo -c -f
+        language: system
+        files: files/sudoers.j2
