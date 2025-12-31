@@ -46,18 +46,11 @@
     msg: "'sudo' is not installed on the target host. Please install it before running this role."
   when: not sudo_bin.stat.exists
 
+# Check if docker is installed (after dependency installation)
 - name: Check if 'docker' is installed
   ansible.builtin.stat:
     path: /usr/bin/docker
   register: docker_bin
-  when: require_docker | bool
-
-- name: Fail if 'docker' is not installed but is required
-  ansible.builtin.fail:
-    msg: "'docker' is not installed on the target host. Please install it or set 'require_docker: false'."
-  when:
-    - require_docker | bool
-    - not docker_bin.stat.exists
 
 # Build groups list dynamically
 - name: Build initial groups list with admin group
@@ -77,7 +70,7 @@
   when: user_groups | length > 0
 
 # Create and configure user
-- name: Ensure user "{{ user_name }}" exists
+- name: "Ensure user exists: {{ user_name }}"
   ansible.builtin.user:
     name: "{{ user_name }}"
     shell: "{{ user_shell }}"
@@ -104,7 +97,7 @@
     mode: '0700'
 
 - name: Install SSH public keys from GitHub
-  ansible.builtin.authorized_key:
+  ansible.posix.authorized_key:
     user: "{{ user_name }}"
     state: present
     key: "{{ ssh_key_url }}"

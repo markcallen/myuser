@@ -1,0 +1,4 @@
+playbook.yml
+
+# Ansible cache and artifacts
+.ansible/

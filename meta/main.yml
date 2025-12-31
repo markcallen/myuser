@@ -18,4 +18,7 @@ galaxy_info:
     - name: Fedora
       versions:
         - all
-dependencies: []
+dependencies:
+  - role: geerlingguy.docker
+    version: 7.9.0
+    when: require_docker | default(true) | bool

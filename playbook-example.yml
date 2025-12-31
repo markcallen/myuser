@@ -1,0 +1,8 @@
+- name: Provision user
+  hosts: all
+  become: yes
+  vars:
+    user_name: myusername
+    ssh_key_url: "https://github.com/myusername.keys"
+  roles:
+    - my-user-ansible

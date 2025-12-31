@@ -4,7 +4,7 @@ user_name: ""
 ssh_key_url: ""
 
 # Optional configurations
-require_docker: true
+require_docker: true  # Automatically installs Docker using geerlingguy.docker v7.9.0
 user_shell: /bin/bash
 user_groups: []  # Additional groups beyond admin group
 create_home: true
