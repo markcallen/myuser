@@ -233,36 +233,6 @@ vars:
   require_docker: false  # Skip Docker installation
 ```
 
-### Python Compatibility Issues
-
-If you encounter errors like `ModuleNotFoundError: No module named 'ansible.module_utils.six.moves'`, this indicates a compatibility issue between your Ansible version and the Python environment on the target host.
-
-The included `playbook-example.yml` includes a bootstrap play that handles this automatically by installing required Python packages before running the role:
-
-```yaml
-- name: Bootstrap Python for Ansible
-  hosts: all
-  become: yes
-  gather_facts: no
-  tasks:
-    - name: Install Python and dependencies
-      ansible.builtin.raw: |
-        apt-get update && apt-get install -y python3 python3-apt python3-distutils
-      changed_when: false
-```
-
-This bootstrap play:
-- Runs before the main provisioning play
-- Uses the `raw` module to bypass Python requirements
-- Installs necessary Python packages for Ansible to function properly
-- Is safe to run multiple times (idempotent)
-
-If you prefer not to use the bootstrap play, you can also upgrade your Ansible installation:
-
-```bash
-pip install --upgrade ansible
-```
-
 ## Safety Features
 
 - **Idempotent**: Safe to run multiple times
@@ -303,7 +273,7 @@ When you reference a role by name (like `myuser` in the playbook), Ansible searc
 
 #### Option 2: Create a test playbook
 
-Create a file `test-local.yml` in the role directory:
+Create a file `test-local.yml` in the parent directory:
 
 ```yaml
 - name: Test role locally
@@ -314,7 +284,7 @@ Create a file `test-local.yml` in the role directory:
     ssh_key_url: "https://github.com/yourusername.keys"
     require_docker: false  # Optional: disable Docker requirement for testing
   roles:
-    - role: .  # The dot means "use the role in current directory"
+    - myuser
 ```
 
 Run it:
